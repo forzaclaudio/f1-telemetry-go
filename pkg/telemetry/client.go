@@ -71,10 +71,11 @@ func (c *Client) Run() {
 			select {
 			case stdin := <-ch:
 				fmt.Println("Processing stdin...")
-				if stdin == "q\n"{
+				if stdin == "q\n" || stdin == "Q\n"{
 					fmt.Println("Valid sequence found. Quiting now!")
 					break main_loop
 				}
+				continue
 			default:
 				fmt.Println("Reading socket")
 				h, p, err := c.server.ReadSocket()
