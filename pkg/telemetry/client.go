@@ -1,8 +1,11 @@
 package telemetry
 
 import (
+	"bufio"
+	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"github.com/forzaclaudio/f1-telemetry-go/internal/event"
 	"github.com/forzaclaudio/f1-telemetry-go/internal/udp"
@@ -51,17 +54,39 @@ func NewClientByCustomIpAddressAndPort(ipAddress string, port int) (*Client, err
 }
 
 func (c *Client) Run() {
-	for {
-		h, p, err := c.server.ReadSocket()
+	fmt.Println("F1 telemetry client running. [Press q + enter to quit]")
+	ch := make(chan string)
+	go func(ch chan string){
+		reader := bufio.NewReader(os.Stdin)
+		s, err := reader.ReadString('\n')
 		if err != nil {
-			c.Stats.IncErr()
-			log.Println(err)
-			continue
+			close(ch)
+			return
 		}
-
-		c.Stats.IncRecv()
-		c.dispatcher.Dispatch(h.PacketID, p)
-	}
+		ch <- s
+		close(ch)
+	}(ch)
+	main_loop:
+		for {
+			select {
+			case stdin := <-ch:
+				fmt.Println("Processing stdin...")
+				if stdin == "q\n"{
+					fmt.Println("Valid sequence found. Quiting now!")
+					break main_loop
+				}
+			default:
+				fmt.Println("Reading socket")
+				h, p, err := c.server.ReadSocket()
+				if err != nil {
+					c.Stats.IncErr()
+					log.Println(err)
+					continue
+				}
+				c.Stats.IncRecv()
+				c.dispatcher.Dispatch(h.PacketID, p)
+			}
+		}
 }
 
 // Shared Events
