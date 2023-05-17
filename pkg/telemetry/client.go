@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/forzaclaudio/f1-telemetry-go/internal/event"
 	"github.com/forzaclaudio/f1-telemetry-go/internal/udp"
@@ -53,7 +54,8 @@ func NewClientByCustomIpAddressAndPort(ipAddress string, port int) (*Client, err
 	return client, nil
 }
 
-func (c *Client) Run() {
+func (c *Client) Run(wg *sync.WaitGroup) {
+	defer wg.Done()
 	fmt.Println("F1 telemetry client running. [Press q + enter to quit]")
 	ch := make(chan string)
 	go func(ch chan string){
